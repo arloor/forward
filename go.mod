@@ -1,4 +1,4 @@
-module go-forward
+module forward
 
 require (
 	github.com/caddyserver/caddy v1.0.5

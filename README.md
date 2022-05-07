@@ -1,10 +1,12 @@
-##  调试caddy-forwardproxy
-
 ## 在vps上部署forwardproxy
 
-### 手动编译forwardproxy
+### 获取二进制可执行文件
 
-> 需要使用go1.16,go 1.18不行
+可以从源码编译，也可以直接下载可执行文件
+
+#### 从源码编译
+
+> 需要使用go1.16，go1.18不行
 
 ```shell
 wget https://go.dev/dl/go1.16.15.linux-amd64.tar.gz -O go1.16.15.linux-amd64.tar.gz
@@ -16,7 +18,7 @@ go16 version
 go16 install github.com/caddyserver/forwardproxy/cmd/caddy@8c6ef2bd4a8f40340b3ecd249f8eed058c567b76
 ```
 
-### 下载二进制
+#### 下载可执行文件
 
 ```shell
 mkdir /root/go
@@ -25,7 +27,7 @@ wget https://bwg.arloor.dev/caddy -O /root/go/bin/caddy
 chmod +x /root/go/bin/caddy
 ```
 
-### 设置服务
+### linux设置开机启动
 
 ```shell
 mkdir /root/go
