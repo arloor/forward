@@ -1,4 +1,6 @@
-## 在vps上部署forwardproxy
+## [HttpProxy](https://github.com/arloor/HttpProxy)的客户端
+
+直接使用caddy的forwardproxy插件作为我的https代理的客户端软件，利用其upstream能力将客户端代理转发到我的HttpProxy上
 
 ### 获取二进制可执行文件
 
