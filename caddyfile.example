@@ -1,6 +1,8 @@
 # caddy -conf caddyfile
 localhost:3128
 
+bind 127.0.0.1
+
 forwardproxy {
     upstream         https://user:passwd@site:443
 }
