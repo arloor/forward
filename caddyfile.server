@@ -1,0 +1,9 @@
+# caddy -conf caddyfile.server #启动服务端
+:443
+
+forwardproxy {
+    basicauth user passwd
+    probe_resistance notexistserver.xxxx.com
+}
+
+tls path/to/fullchain path/to/private.key

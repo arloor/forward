@@ -1,4 +1,4 @@
-# caddy -conf caddyfile
+# caddy -conf caddyfile.client # 启动客户端
 localhost:3128
 
 bind 127.0.0.1
