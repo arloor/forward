@@ -38,6 +38,8 @@ chmod +x /root/go/bin/caddy
 cat > /etc/caddyfile <<EOF
 localhost:3128
 
+bind 127.0.0.1
+
 forwardproxy {
     upstream         https://user:passwd@site:443
 }
