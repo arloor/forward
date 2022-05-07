@@ -41,6 +41,8 @@ localhost:3128
 bind 127.0.0.1
 
 forwardproxy {
+    hide_ip
+    hide_via
     upstream         https://user:passwd@site:443
 }
 EOF

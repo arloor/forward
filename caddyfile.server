@@ -2,6 +2,8 @@
 :443
 
 forwardproxy {
+    hide_ip
+    hide_via
     basicauth user passwd
     probe_resistance notexistserver.xxxx.com
 }
