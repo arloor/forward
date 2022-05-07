@@ -18,6 +18,7 @@ go16 install github.com/caddyserver/forwardproxy/cmd/caddy@8c6ef2bd4a8f40340b3ec
 ### 下载二进制
 
 ```shell
+mkdir /root/go
 mkdir /root/go/bin
 wget https://bwg.arloor.dev/caddy -O /root/go/bin/caddy
 chmod +x /root/go/bin/caddy
