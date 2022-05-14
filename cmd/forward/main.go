@@ -1,11 +1,20 @@
 package main
 
 import (
-	"github.com/caddyserver/caddy/caddy/caddymain"
+	"flag"
+	"forward/internal/socks5"
+	http "github.com/caddyserver/caddy/caddy/caddymain"
 	_ "github.com/caddyserver/forwardproxy"
+	"log"
 )
 
+func init() {
+	log.SetFlags(log.Lshortfile | log.Flags())
+}
+
 func main() {
-	caddymain.EnableTelemetry = false
-	caddymain.Run()
+	flag.Parse()
+	go socks5.Serve()
+	http.EnableTelemetry = false
+	http.Run()
 }
