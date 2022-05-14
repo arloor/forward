@@ -3,7 +3,6 @@ package stream
 import (
 	"crypto/tls"
 	"io"
-	"log"
 	"net"
 	"strconv"
 )
@@ -32,7 +31,6 @@ func Relay(conWithClient, conWithTarget net.Conn, host string) {
 		conWithClient.Close()
 	}()
 	io.Copy(conWithClient, conWithTarget)
-	log.Printf("end relay for %s\n", host)
 }
 
 func WriteAll(conn net.Conn, buf []byte) error {
