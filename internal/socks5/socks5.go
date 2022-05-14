@@ -31,7 +31,7 @@ func handler(conn net.Conn) {
 		return
 	}
 	host := addr + ":" + strconv.Itoa(port)
-	log.Println("代理请求", host)
+	log.Println(conn.RemoteAddr().String(), "=>", host)
 	serverConn, err := stream.Dial(proxyHost, proxyPort)
 	if err != nil {
 		log.Println(err)
@@ -42,8 +42,9 @@ func handler(conn net.Conn) {
 	serverReader := bufio.NewReader(serverConn)
 	var line []byte
 	line, _, err = serverReader.ReadLine()
-	if err != nil || !strings.Contains(string(line), "200") {
-		log.Println("与代理握手失败", err)
+	statusLine := string(line)
+	if err != nil || !strings.Contains(statusLine, "200") {
+		log.Println("与代理握手失败", statusLine, err)
 		return
 	}
 	for {
