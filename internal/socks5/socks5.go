@@ -12,7 +12,7 @@ import (
 
 func Serve() {
 	if proxyHost != "" {
-		listen(":" + strconv.Itoa(socks5Port))
+		listen(socks5Addr)
 	}
 }
 

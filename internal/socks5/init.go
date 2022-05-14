@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	flag.IntVar(&socks5Port, "socks5port", 1080, "启动socks5代理的端口")
+	flag.StringVar(&socks5Addr, "socks5addr", "127.0.0.1:1080", "启动socks5代理地址")
 	flag.StringVar(&proxyHost, "proxyHost", "", "代理地址")
 	flag.IntVar(&proxyPort, "proxyPort", 443, "代理端口")
 	flag.StringVar(&proxyUser, "proxyUser", "", "代理用户")
@@ -13,7 +13,7 @@ func init() {
 }
 
 var (
-	socks5Port  int
+	socks5Addr  string
 	proxyHost   string
 	proxyPort   int
 	proxyUser   string
