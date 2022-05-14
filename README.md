@@ -4,6 +4,14 @@
 
 ![](/forward部署图.svg)
 
+### 从[releases](https://github.com/arloor/forward/releases/tag/V2.0)下载可执行文件
+
+```shell
+mkdir /root/go
+mkdir /root/go/bin
+wget https://github.com/arloor/forward/releases/download/V2.0/forward_linux_x64 -O /root/go/bin/forward
+chmod +x /root/go/bin/forward
+```
 
 ### 从源码编译
 
