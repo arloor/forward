@@ -4,15 +4,6 @@
 
 ![](/forward部署图.svg)
 
-### 从[releases](https://github.com/arloor/forward/releases/tag/V2.0)下载可执行文件
-
-```shell
-mkdir /root/go
-mkdir /root/go/bin
-wget https://github.com/arloor/forward/releases/download/V2.0/forward_linux_x64 -O /root/go/bin/forward
-chmod +x /root/go/bin/forward
-```
-
 ### 从源码编译
 
 > 需要使用go1.16，go 1.18不行
@@ -33,6 +24,7 @@ go16 install forward/cmd/forward
 ### 配置文件
 
 ```shell
+# http代理
 cat > /etc/caddyfile <<EOF
 localhost:3128
 
@@ -45,32 +37,18 @@ forwardproxy {
     upstream         https://user:passwd@proxy.site:443
 }
 EOF
+
+# socks5代理
+cat > /etc/socks5.yaml <<EOF
+local-addr: localhost:1080
+upstream: https://user:passwd@proxy.site:443
+EOF
 ```
 
-### linux设置开机启动
+### 运行指南
 
 ```shell
-cat > /lib/systemd/system/con.service <<EOF
-[Unit]
-Description=本地http和socks5代理
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-WorkingDirectory=/tmp
-ExecStart=/root/go/bin/forward -conf /etc/caddyfile -log /var/log/forward.log -proxyHost proxy.site -proxyUser user -proxyPasswd passwd
-LimitNOFILE=100000
-Restart=always
-RestartSec=30
-
-[Install]
-WantedBy=multi-user.target
-EOF
-service con stop
-systemctl daemon-reload
-service con start
-service con status
-systemctl enable  con
+/root/go/bin/forward -conf /etc/caddyfile -log /var/log/forward.log -socks5conf /etc/socks5.yaml
 ```
 
 ### 测试
