@@ -4,20 +4,63 @@ import (
 	"bufio"
 	"encoding/base64"
 	"forward/internal/stream"
+	"gopkg.in/yaml.v2"
+	"io"
 	"log"
 	"net"
+	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
 
+var basicAuth string
+var upstreamHost string
+var upstreamPort int = 443
+
 func Serve() {
-	if proxyHost != "" {
-		listen(socks5Addr)
+	err := parseConf(socks5yaml)
+	if err != nil {
+		return
+	}
+	upstream, err := url.Parse(conf.Upstream)
+	if conf.LocalAddr != "" && upstream.Host != "" && upstream.Scheme == "https" {
+		parseUpstream(upstream)
+		listen(conf.LocalAddr)
+	}
+}
+
+func parseConf(socks5conf string) error {
+	log.Println("从", socks5conf, "读取socks5配置")
+	file, err := os.Open(socks5conf)
+	if err != nil {
+		return err
+	}
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	log.Println("\n" + string(bytes))
+	err = yaml.Unmarshal(bytes, &conf)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseUpstream(upstream *url.URL) {
+	username := upstream.User.Username()
+	password, _ := upstream.User.Password()
+	basicAuth = base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	upstreamHost = upstream.Host
+	if upstream.Port() == "" {
+		upstreamPort = 443
+	} else {
+		upstreamPort, _ = strconv.Atoi(upstream.Port())
 	}
 }
 
 func handler(conn net.Conn) {
-	basicAuth := base64.StdEncoding.EncodeToString([]byte(proxyUser + ":" + proxyPasswd))
 	reader := bufio.NewReader(conn)
 	defer conn.Close()
 	handshakeErr := Handshake(reader, conn)
@@ -32,7 +75,7 @@ func handler(conn net.Conn) {
 	}
 	host := addr + ":" + strconv.Itoa(port)
 	log.Println(conn.RemoteAddr().String(), "=>", host)
-	serverConn, err := stream.Dial(proxyHost, proxyPort)
+	serverConn, err := stream.Dial(upstreamHost, upstreamPort)
 	if err != nil {
 		log.Println(err)
 		return

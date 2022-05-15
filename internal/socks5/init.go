@@ -5,17 +5,15 @@ import (
 )
 
 func init() {
-	flag.StringVar(&socks5Addr, "socks5addr", "127.0.0.1:1080", "启动socks5代理地址")
-	flag.StringVar(&proxyHost, "proxyHost", "", "代理地址")
-	flag.IntVar(&proxyPort, "proxyPort", 443, "代理端口")
-	flag.StringVar(&proxyUser, "proxyUser", "", "代理用户")
-	flag.StringVar(&proxyPasswd, "proxyPasswd", "", "代理密码")
+	flag.StringVar(&socks5yaml, "socks5conf", "socks5.yaml", "socks5代理配置")
 }
 
 var (
-	socks5Addr  string
-	proxyHost   string
-	proxyPort   int
-	proxyUser   string
-	proxyPasswd string
+	conf       Config
+	socks5yaml string
 )
+
+type Config struct {
+	LocalAddr string `yaml:"local-addr"`
+	Upstream  string `yaml:"upstream"`
+}
