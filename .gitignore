@@ -1,3 +1,4 @@
 caddyfile
 .idea
 socks5.yaml
+target/
