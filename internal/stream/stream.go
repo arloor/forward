@@ -1,14 +1,19 @@
 package stream
 
 import (
+	"bufio"
 	"crypto/tls"
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net"
 	"strconv"
+	"strings"
 )
 
-// Dial 建立到目标地址的TLS连接
-func Dial(domain string, port int) (net.Conn, error) {
+// dialTls 建立到目标地址的TLS连接
+func dialTls(domain string, port int) (net.Conn, error) {
 	tlsConf := tls.Config{
 		ServerName: domain,
 	}
@@ -31,6 +36,40 @@ func Relay(conWithClient, conWithTarget net.Conn, host string) {
 		conWithClient.Close()
 	}()
 	io.Copy(conWithClient, conWithTarget)
+}
+
+func BuildUpstreamSocket(upstreamHost string, upstreamPort int, target string, basicAuth string) (conn net.Conn, err error) {
+	conn, err = dialTls(upstreamHost, upstreamPort)
+	if err != nil {
+		return
+	}
+	err = handshakeWithUpstream(conn, target, basicAuth)
+	if err != nil {
+		return
+	}
+	return conn, nil
+}
+
+func handshakeWithUpstream(upstreamCon net.Conn, host string, basicAuth string) error {
+	WriteAll(upstreamCon, []byte("CONNECT "+host+" HTTP/1.1\r\nHost: "+host+"\r\nProxy-Authorization: Basic "+basicAuth+"\r\n\r\n"))
+	serverReader := bufio.NewReader(upstreamCon)
+	var line []byte
+	line, _, err := serverReader.ReadLine()
+	statusLine := string(line)
+	if err != nil || !strings.Contains(statusLine, "200") {
+		log.Println("与代理握手失败", statusLine, err)
+		return errors.New(fmt.Sprintf("与代理握手失败 %s %s", statusLine, err))
+	}
+	for {
+		line, _, err = serverReader.ReadLine()
+		if err != nil {
+			return err
+		}
+		if len(line) == 0 {
+			break
+		}
+	}
+	return nil
 }
 
 func WriteAll(conn net.Conn, buf []byte) error {

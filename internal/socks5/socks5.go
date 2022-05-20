@@ -2,30 +2,21 @@ package socks5
 
 import (
 	"bufio"
-	"encoding/base64"
 	"forward/internal/stream"
 	"gopkg.in/yaml.v2"
 	"io"
 	"log"
 	"net"
-	"net/url"
 	"os"
 	"strconv"
-	"strings"
 )
-
-var basicAuth string
-var upstreamHost string
-var upstreamPort int = 443
 
 func Serve() {
 	err := parseConf(socks5yaml)
 	if err != nil {
 		return
 	}
-	upstream, err := url.Parse(conf.Upstream)
-	if conf.LocalAddr != "" && upstream.Host != "" && upstream.Scheme == "https" {
-		parseUpstream(upstream)
+	if conf.LocalAddr != "" {
 		listen(conf.LocalAddr)
 	}
 }
@@ -40,73 +31,63 @@ func parseConf(socks5conf string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("\n" + string(bytes))
+	log.Println("socks5启动配置为\n" + string(bytes))
 	err = yaml.Unmarshal(bytes, &conf)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func parseUpstream(upstream *url.URL) {
-	username := upstream.User.Username()
-	password, _ := upstream.User.Password()
-	basicAuth = base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
-	upstreamHost = upstream.Host
-	if upstream.Port() == "" {
-		upstreamPort = 443
-	} else {
-		upstreamPort, _ = strconv.Atoi(upstream.Port())
+	for _, upstream := range conf.Upstreams {
+		upstreamMap[upstream.Name] = &Upstream{Name: upstream.Name, Host: upstream.Host, Port: upstream.Port, BasicAuth: upstream.BasicAuth}
 	}
+	return nil
 }
 
 func handler(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	defer conn.Close()
-	handshakeErr := Handshake(reader, conn)
-	if handshakeErr != nil {
-		log.Println("handshakeErr ", handshakeErr)
+	err := Handshake(reader, conn)
+	if err != nil {
+		log.Println("err ", err)
 		return
 	}
-	addr, port, getTargetErr := ParseRequest(reader, conn)
+	host, port, getTargetErr := ParseRequest(reader, conn)
 	if getTargetErr != nil {
 		log.Println(getTargetErr)
 		return
 	}
-	host := addr + ":" + strconv.Itoa(port)
-	log.Println(conn.RemoteAddr().String(), "=>", host)
-	serverConn, err := stream.Dial(upstreamHost, upstreamPort)
+	addr := host + ":" + strconv.Itoa(port)
+	upstream := determineUpstream(host)
+	log.Println(conn.RemoteAddr().String(), "=> [", InfoUpstream(upstream), "] =>", addr)
+	upstreamConn, err := buildOuterSocket(upstream, addr)
+	if upstreamConn != nil {
+		defer upstreamConn.Close()
+	}
 	if err != nil {
-		log.Println(err)
 		return
 	}
-	defer serverConn.Close()
-	stream.WriteAll(serverConn, []byte("CONNECT "+host+" HTTP/1.1\r\nHost: "+host+"\r\nProxy-Authorization: Basic "+basicAuth+"\r\n\r\n"))
-	serverReader := bufio.NewReader(serverConn)
-	var line []byte
-	line, _, err = serverReader.ReadLine()
-	statusLine := string(line)
-	if err != nil || !strings.Contains(statusLine, "200") {
-		log.Println("与代理握手失败", statusLine, err)
-		return
+	stream.Relay(conn, upstreamConn, addr)
+}
+
+// 如果upstream为nil，则直连目标地址
+func buildOuterSocket(upstream *Upstream, addr string) (conn net.Conn, err error) {
+	if upstream != nil {
+		return stream.BuildUpstreamSocket(upstream.Host, upstream.Port, addr, upstream.BasicAuth)
+	} else {
+		return net.Dial("tcp", addr)
 	}
-	for {
-		line, _, err = serverReader.ReadLine()
-		if err != nil {
-			return
-		}
-		if len(line) == 0 {
-			break
+}
+
+func determineUpstream(addr string) (upstream *Upstream) {
+	ip := net.ParseIP(addr)
+	for _, rule := range conf.Rules {
+		if rule.determine(addr, ip) {
+			return upstreamMap[rule.UpstreamName]
 		}
 	}
-	stream.Relay(conn, serverConn, host)
+	return nil
 }
 
 func listen(addr string) {
-	if handler == nil {
-		log.Println("handler为空，请先调用RegisterHandler")
-		return
-	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Println("监听", addr, "失败 ", err)
