@@ -6,7 +6,7 @@
 
 ### 从Release页面下载二进制文件
 
-- 目前最新版本为V3.0
+- 目前最新版本为V4.0
 - 提供了Windows64位和Linux64位可执行文件
 
 ### 从源码编译
@@ -45,10 +45,19 @@ EOF
 
 # socks5代理
 cat > /etc/socks5.yaml <<EOF
-local-addr: localhost:1080
-upstream: https://user:passwd@proxy.site:443
+local-addr: localhost:1080 # 监听地址
+upstreams:
+  - name: default          # 上游名称
+    host: proxy.site       # 上游地址
+    port: 443              # 上游端口
+    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I= # "user:passwd" base64编码后的结果
+rules:
+  - rule-type: MATCH
+    upstream-Name: default
 EOF
 ```
+
+> socks5支持根据目标地址选择具体上游，具体配置例子见[socks5.yaml.example](/socks5.yaml.example)
 
 ### 运行指南
 
