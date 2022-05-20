@@ -57,7 +57,7 @@ func handler(conn net.Conn) {
 	}
 	addr := host + ":" + strconv.Itoa(port)
 	upstream := determineUpstream(host)
-	log.Println(conn.RemoteAddr().String(), "=> [", InfoUpstream(upstream), "] =>", addr)
+	log.Printf("%21s => [%21s] => %s\n", conn.RemoteAddr().String(), InfoUpstream(upstream), addr)
 	upstreamConn, err := buildOuterSocket(upstream, addr)
 	if upstreamConn != nil {
 		defer upstreamConn.Close()
