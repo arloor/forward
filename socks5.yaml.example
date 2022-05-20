@@ -3,11 +3,11 @@ upstreams:
   - name: default          # 上游名称
     host: default.site     # 上游地址
     port: 443              # 上游端口
-    basic-auth: YXJsb29yOmh0dHBmb3Jhcmxvb3I= # "user:passwd" base64编码后的结果
+    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I= # "user:passwd" base64编码后的结果
   - name: other
     host: other.site
     port: 443
-    basic-auth: YXJsb29yOmh0dHBmb3Jhcmxvb3I=
+    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I=
 rules:
   - rule-type: IP-CIDR         # 根据子网来路由
     value: 91.105.192.0/23
