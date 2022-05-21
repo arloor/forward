@@ -62,7 +62,7 @@ EOF
 ### 运行指南
 
 ```shell
-/root/go/bin/forward -conf /etc/caddyfile -log /var/log/forward.log -socks5conf /etc/socks5.yaml
+/root/go/bin/forward -conf /etc/caddyfile -socks5conf /etc/socks5.yaml -log /var/log/forward.log
 ```
 
 ### 测试
