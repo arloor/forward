@@ -22,19 +22,25 @@ var (
 )
 
 type RouterRule struct {
-	RuleType     string `yaml:"rule-type"`
-	Value        string `yaml:"value,omitempty"`
-	UpstreamName string `yaml:"upstream-Name"`
+	RuleType     string   `yaml:"rule-type"`
+	Values       []string `yaml:"value,omitempty"`
+	UpstreamName string   `yaml:"upstream-Name"`
 }
 
 func (receiver *RouterRule) determine(domain string, ip net.IP) bool {
 	if receiver.RuleType == IP_CIDR && ip != nil {
-		_, ipNet, err := net.ParseCIDR(receiver.Value)
-		if err == nil {
-			return ipNet.Contains(ip)
+		for _, value := range receiver.Values {
+			_, ipNet, err := net.ParseCIDR(value)
+			if err == nil && ipNet.Contains(ip) {
+				return true
+			}
 		}
 	} else if receiver.RuleType == DOMAIN_SUFFIX && domain != "" {
-		return strings.HasSuffix(domain, receiver.Value)
+		for _, value := range receiver.Values {
+			if strings.HasSuffix(domain, value) {
+				return true
+			}
+		}
 	} else if receiver.RuleType == MATCH {
 		return true
 	}

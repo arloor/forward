@@ -10,10 +10,13 @@ upstreams:
     basic-auth: YXJsb2xxxxxxxxxxxxxvb3I=
 rules:
   - rule-type: IP-CIDR         # 根据子网来路由
-    value: 91.105.192.0/23
+    value:
+      - 91.105.192.0/23
+      - 91.108.4.0/22
     upstream-Name: other       # 使用名为other的upstream
   - rule-type: DOMAIN-SUFFIX   # 根据域名来路由
-    value: arloor.com
+    value:
+      - arloor.com
     upstream-Name: direct      # 使用名为direct的upstream，因为没有名为direct的upstream，所以效果是直连目标地址
   - rule-type: MATCH           # MATCH表示上述规则都比匹配后的默认路由。MATCH一定要放最后
     upstream-Name: default      # 使用名为default的upstream
