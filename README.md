@@ -1,3 +1,5 @@
+**声明：本项目仅以学习为目的，请在当地法律允许的范围内使用本程序。任何因错误用途导致的法律责任，与本项目无关！**
+
 ## [HttpProxy](https://github.com/arloor/HttpProxy)的客户端
 
 在本地启动http和socks5代理，作为[HttpProxy](https://github.com/arloor/HttpProxy)的客户端。socks5代理由自己开发，http代理使用caddy的forwardproxy插件。
