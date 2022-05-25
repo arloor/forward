@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -289,6 +290,7 @@ func (fp *ForwardProxy) dialContextCheckACL(ctx context.Context, network, hostPo
 }
 
 func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) {
+	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL.Host)
 	var authErr error
 	if fp.authRequired {
 		authErr = fp.checkCredentials(r)

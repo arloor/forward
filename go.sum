@@ -34,6 +34,12 @@ github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20190808125512-07798873deee/go.mod
 github.com/aliyun/aliyun-oss-go-sdk v0.0.0-20190307165228-86c17b95fcd5/go.mod h1:T/Aws4fEfogEE9v+HPhhw+CntffsBHJ8nXQCwKr0/g8=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
+github.com/arloor/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f h1:vrKJnna1nsLQeqqcplFUJGaS2hibjz3T/QF6df8DRqo=
+github.com/arloor/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f/go.mod h1:W0aU9LnTqv+Yzt+9Tu72GAb3ERJW6IDNB032Y6R9ZD0=
+github.com/arloor/forwardproxy v0.0.0-20220525105453-e3c1f3bdca60 h1:ZP9zuiGcSEuU40WGNQY1INujDjY0I2PssrFvjqlqhK4=
+github.com/arloor/forwardproxy v0.0.0-20220525105453-e3c1f3bdca60/go.mod h1:AJ5pocwaaaTt9GclcuRk/4hSYqVBS9fF7L9VPhdZABw=
+github.com/arloor/forwardproxy v0.0.0-20220525105858-6abe7701be35 h1:zVbBqNz+C+v1dvbQyuH2NrRnMpdA2xPfxMMrEaYqx9Q=
+github.com/arloor/forwardproxy v0.0.0-20220525105858-6abe7701be35/go.mod h1:AJ5pocwaaaTt9GclcuRk/4hSYqVBS9fF7L9VPhdZABw=
 github.com/aws/aws-sdk-go v1.23.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f/go.mod h1:AuiFmCCPBSrqvVMvuqFuk0qogytodnVFVSN5CeJB8Gc=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
