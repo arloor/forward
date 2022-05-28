@@ -38,7 +38,7 @@ github.com/caddyserver/caddy/caddytls
 github.com/caddyserver/caddy/onevent
 github.com/caddyserver/caddy/onevent/hook
 github.com/caddyserver/caddy/telemetry
-# github.com/caddyserver/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f => github.com/arloor/forwardproxy v0.0.0-20220525105858-6abe7701be35
+# github.com/caddyserver/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f => github.com/arloor/forwardproxy v0.0.0-20220528070509-f3c1b36e0a33
 ## explicit
 github.com/caddyserver/forwardproxy
 github.com/caddyserver/forwardproxy/httpclient
