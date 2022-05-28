@@ -22,7 +22,7 @@ func Serve() {
 }
 
 func parseConf(socks5conf string) error {
-	log.Println("从", socks5conf, "读取socks5配置")
+	log.Println("read socks5 conf from", socks5conf)
 	file, err := os.Open(socks5conf)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func parseConf(socks5conf string) error {
 	}
 	marshal, err := yaml.Marshal(conf)
 	if err == nil {
-		log.Println("socks5启动配置为\n" + string(marshal))
+		log.Println("socks5 conf:\n" + string(marshal))
 	}
 
 	for _, upstream := range conf.Upstreams {
@@ -73,6 +73,7 @@ func handler(conn net.Conn) {
 		defer upstreamConn.Close()
 	}
 	if err != nil {
+		log.Printf("%21s => [%21s] => %s error:%s\n", conn.RemoteAddr().String(), InfoUpstream(upstream), addr, err)
 		return
 	}
 	stream.Relay(conn, upstreamConn, addr)
@@ -100,15 +101,15 @@ func determineUpstream(addr string) (upstream *Upstream) {
 func listen(addr string) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Println("监听", addr, "失败 ", err)
+		log.Println("listen", addr, "error ", err)
 		return
 	}
 	defer ln.Close()
-	log.Println("在 ", ln.Addr(), "启动socks代理")
+	log.Println("serve socks5 proxy at ", ln.Addr())
 	for {
 		c, err := ln.Accept()
 		if err != nil {
-			log.Println("接受连接失败 ", err)
+			log.Println("accept socket ", err)
 		} else {
 			go handler(c)
 		}

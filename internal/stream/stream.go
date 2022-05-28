@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -57,8 +56,7 @@ func handshakeWithUpstream(upstreamCon net.Conn, host string, basicAuth string) 
 	line, _, err := serverReader.ReadLine()
 	statusLine := string(line)
 	if err != nil || !strings.Contains(statusLine, "200") {
-		log.Println("与代理握手失败", statusLine, err)
-		return errors.New(fmt.Sprintf("与代理握手失败 %s %s", statusLine, err))
+		return errors.New(fmt.Sprintf("upstream handshake error: %s %s", statusLine, err))
 	}
 	for {
 		line, _, err = serverReader.ReadLine()
