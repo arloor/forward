@@ -31,11 +31,21 @@ func parseConf(socks5conf string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("socks5启动配置为\n" + string(bytes))
 	err = yaml.Unmarshal(bytes, &conf)
 	if err != nil {
 		return err
 	}
+	if conf.GfwText != "" && conf.GfwUpstreamName != "" {
+		rule := GenRouteRuleFromGfwText(conf.GfwText, conf.GfwUpstreamName)
+		if rule != nil {
+			conf.Rules = append(conf.Rules, *rule)
+		}
+	}
+	marshal, err := yaml.Marshal(conf)
+	if err == nil {
+		log.Println("socks5启动配置为\n" + string(marshal))
+	}
+
 	for _, upstream := range conf.Upstreams {
 		upstreamMap[upstream.Name] = &Upstream{Name: upstream.Name, Host: upstream.Host, Port: upstream.Port, BasicAuth: upstream.BasicAuth}
 	}
