@@ -12,7 +12,6 @@ import (
 
 const DOMAIN_SUFFIX = "DOMAIN-SUFFIX"
 const IP_CIDR = "IP-CIDR"
-const MATCH = "MATCH"
 
 func init() {
 	flag.StringVar(&socks5yaml, "socks5conf", "socks5.yaml", "socks5代理配置")
@@ -44,8 +43,6 @@ func (receiver *RouterRule) determine(domain string, ip net.IP) bool {
 				return true
 			}
 		}
-	} else if receiver.RuleType == MATCH {
-		return true
 	}
 	return false
 }
