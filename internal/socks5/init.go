@@ -54,7 +54,7 @@ type Config struct {
 	FinalUpstreamName string       `yaml:"final-upstream-name,omitempty"`
 	Upstreams         []Upstream   `yaml:"upstreams"`
 	GfwText           string       `yaml:"gfw-text,omitempty"`
-	GfwUpstreamName   string       `yaml:"gfw-upstream-name,omitempty"`
+	GfwUpstreamName   string       `yaml:"gfw-upstream-name"`
 	LocalAddr         string       `yaml:"local-addr"`
 	Rules             []RouterRule `yaml:"rules"`
 }
