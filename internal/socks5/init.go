@@ -25,8 +25,8 @@ var (
 
 type RouterRule struct {
 	UpstreamName string   `yaml:"upstream-name"`
-	Values       []string `yaml:"value,omitempty"`
 	RuleType     string   `yaml:"rule-type"`
+	Values       []string `yaml:"value,omitempty"`
 }
 
 func (receiver *RouterRule) determine(domain string, ip net.IP) bool {
