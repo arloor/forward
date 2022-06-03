@@ -6,10 +6,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+var pool = &sync.Pool{New: func() interface{} {
+	return make([]byte, 32*1024)
+}}
+
+// 屏蔽掉TCPCon的ReadFrom接口，因为并不能使用SendFile来减少copy，反而不能使用io.CopyBuf的buf缓存了
+type writerOnly struct {
+	io.Writer
+}
 
 // dialTls 建立到目标地址的TLS连接
 func dialTls(domain string, port int) (net.Conn, error) {
@@ -30,11 +41,21 @@ func dialTls(domain string, port int) (net.Conn, error) {
 
 func Relay(conWithClient, conWithTarget net.Conn, host string) {
 	go func() {
-		io.Copy(conWithTarget, conWithClient)
+		buf := pool.Get().([]byte)
+		defer pool.Put(buf)
+		_, err := io.CopyBuffer(writerOnly{conWithTarget}, conWithClient, buf)
+		if err == io.ErrShortWrite {
+			log.Println("copy short for", host)
+		}
 		conWithTarget.Close()
 		conWithClient.Close()
 	}()
-	io.Copy(conWithClient, conWithTarget)
+	buf := pool.Get().([]byte)
+	defer pool.Put(buf)
+	_, err := io.CopyBuffer(writerOnly{conWithClient}, conWithTarget, buf)
+	if err == io.ErrShortWrite {
+		log.Println("copy short for", host)
+	}
 }
 
 func BuildUpstreamSocket(upstreamHost string, upstreamPort int, target string, basicAuth string) (conn net.Conn, err error) {

@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"forward/internal/socks5"
-	http "github.com/caddyserver/caddy/caddy/caddymain"
+	httpproxy "github.com/caddyserver/caddy/caddy/caddymain"
 	_ "github.com/caddyserver/forwardproxy"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func init() {
@@ -14,7 +16,8 @@ func init() {
 
 func main() {
 	flag.Parse()
+	go http.ListenAndServe("localhost:9999", nil)
 	go socks5.Serve()
-	http.EnableTelemetry = false
-	http.Run()
+	httpproxy.EnableTelemetry = false
+	httpproxy.Run()
 }
