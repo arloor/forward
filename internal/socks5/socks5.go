@@ -16,13 +16,13 @@ func Serve() {
 	if err != nil {
 		return
 	}
-	if conf.LocalAddr != "" {
-		listen(conf.LocalAddr)
+	if config.LocalAddr != "" {
+		listen(config.LocalAddr)
 	}
 }
 
 func parseConf(socks5conf string) error {
-	log.Println("read socks5 conf from", socks5conf)
+	log.Println("read socks5 config from", socks5conf)
 	file, err := os.Open(socks5conf)
 	if err != nil {
 		return err
@@ -31,22 +31,22 @@ func parseConf(socks5conf string) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(bytes, &conf)
+	err = yaml.Unmarshal(bytes, &config)
 	if err != nil {
 		return err
 	}
-	if conf.GfwText != "" && conf.GfwUpstreamName != "" {
-		rule := GenRouteRuleFromGfwText(conf.GfwText, conf.GfwUpstreamName)
+	if config.GfwText != "" && config.GfwUpstreamName != "" {
+		rule := GenRouteRuleFromGfwText(config.GfwText, config.GfwUpstreamName)
 		if rule != nil {
-			conf.Rules = append(conf.Rules, *rule)
+			config.Rules = append(config.Rules, *rule)
 		}
 	}
-	marshal, err := yaml.Marshal(conf)
+	marshal, err := yaml.Marshal(config)
 	if err == nil {
-		log.Println("socks5 conf:\n" + string(marshal))
+		log.Println("socks5 config:\n" + string(marshal))
 	}
 
-	for _, upstream := range conf.Upstreams {
+	for _, upstream := range config.Upstreams {
 		upstreamMap[upstream.Name] = &Upstream{Name: upstream.Name, Host: upstream.Host, Port: upstream.Port, BasicAuth: upstream.BasicAuth}
 	}
 	return nil
@@ -90,12 +90,12 @@ func buildOuterSocket(upstream *Upstream, addr string) (conn net.Conn, err error
 
 func determineUpstream(addr string) (upstream *Upstream) {
 	ip := net.ParseIP(addr)
-	for _, rule := range conf.Rules {
+	for _, rule := range config.Rules {
 		if rule.determine(addr, ip) {
 			return upstreamMap[rule.UpstreamName]
 		}
 	}
-	return nil
+	return upstreamMap[config.FinalUpstreamName]
 }
 
 func listen(addr string) {

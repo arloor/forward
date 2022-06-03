@@ -16,7 +16,10 @@ func init() {
 
 func main() {
 	flag.Parse()
-	go http.ListenAndServe("localhost:9999", nil)
+	go func() {
+		http.HandleFunc("/final", socks5.ModifyFinalUpstream)
+		http.ListenAndServe("localhost:9999", nil)
+	}()
 	go socks5.Serve()
 	httpproxy.EnableTelemetry = false
 	httpproxy.Run()
