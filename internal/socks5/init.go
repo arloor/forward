@@ -51,10 +51,10 @@ func (receiver *RouterRule) determine(domain string, ip net.IP) bool {
 }
 
 type Config struct {
-	FinalUpstreamName string       `yaml:"final-upstream-name,omitempty"`
+	FinalUpstreamName string       `yaml:"final-upstream-name"`
 	Upstreams         []Upstream   `yaml:"upstreams"`
 	GfwText           string       `yaml:"gfw-text,omitempty"`
-	GfwUpstreamName   string       `yaml:"gfw-upstream-name"`
+	GfwUpstreamName   string       `yaml:"gfw-upstream-name,omitempty"`
 	LocalAddr         string       `yaml:"local-addr"`
 	Rules             []RouterRule `yaml:"rules"`
 }
