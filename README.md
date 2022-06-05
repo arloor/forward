@@ -8,7 +8,6 @@
 
 ### 从Release页面下载二进制文件
 
-- 目前最新版本为V4.0
 - 提供了Windows64位和Linux64位可执行文件
 
 ### 从源码编译
@@ -53,9 +52,9 @@ upstreams:
     host: proxy.site       # 上游地址
     port: 443              # 上游端口
     basic-auth: YXJsb2xxxxxxxxxxxxxvb3I= # "user:passwd" base64编码后的结果
-rules:
-  - rule-type: MATCH
-    upstream-Name: default
+gfw-text: E:\GoLandProjects\go-forward\gfwlist.txt # gfwlist中的域名走下面的upstream
+gfw-upstream-name: default
+final-upstream-name: "default" # 未命中rules时使用的upstream，留空则直连
 EOF
 ```
 

@@ -1,22 +1,51 @@
-local-addr: localhost:1081 # 监听地址
+final-upstream-name: "default"
 upstreams:
-  - name: default          # 上游名称
-    host: default.site     # 上游地址
-    port: 443              # 上游端口
-    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I= # "user:passwd" base64编码后的结果
-  - name: other
-    host: other.site
+  - name: default
+    host: proxy.host
     port: 443
-    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I=
+    basic-auth: cHVibxxxxxxxN3ZA==
+gfw-text: E:\GoLandProjects\go-forward\gfwlist.txt
+gfw-upstream-name: default
+local-addr: localhost:1080
 rules:
-  - rule-type: IP-CIDR         # 根据子网来路由
+  - upstream-name: default
+    rule-type: DOMAIN-SUFFIX
+    value:
+      - speedtest.net
+      - mozilla.com
+      - mozilla.net
+      - mozilla.org
+      - firefox.com
+      - google.com.hk
+      - google.com.sg
+      - google.com.jp
+      - .vscode-cdn.net
+      - .github.com
+      - .github.dev
+      - .trafficmanager.net
+      - .gallerycdn.vsassets.io
+      - default.exp-tas.com
+      - github.vscode-unpkg.net
+      - .visualstudio.com
+      - raw.githubusercontent.com
+      - vortex.data.microsoft.com
+      - .azureedge.net
+      - .servicebus.windows.net
+      - .jetbrains.com
+      - microsoft.com
+      - githubpreview.dev
+  - upstream-name: default
+    rule-type: IP-CIDR
     value:
       - 91.105.192.0/23
       - 91.108.4.0/22
-    upstream-Name: other       # 使用名为other的upstream
-  - rule-type: DOMAIN-SUFFIX   # 根据域名来路由
-    value:
-      - arloor.com
-    upstream-Name: direct      # 使用名为direct的upstream，因为没有名为direct的upstream，所以效果是直连目标地址
-  - rule-type: MATCH           # MATCH表示上述规则都比匹配后的默认路由。MATCH一定要放最后
-    upstream-Name: default      # 使用名为default的upstream
+      - 91.108.8.0/21
+      - 91.108.16.0/21
+      - 91.108.56.0/22
+      - 95.161.64.0/20
+      - 149.154.160.0/20
+      - 185.76.151.0/24
+      - 2001:67c:4e8::/48
+      - 2001:b28:f23c::/47
+      - 2001:b28:f23f::/48
+      - 2a0a:f280:203::/48
