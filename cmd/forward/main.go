@@ -20,7 +20,7 @@ func main() {
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		http.HandleFunc("/final", socks5.ModifyFinalUpstream)
-		http.ListenAndServe("localhost:9999", nil)
+		http.ListenAndServe(":9999", nil)
 	}()
 	go socks5.Serve()
 	httpproxy.EnableTelemetry = false

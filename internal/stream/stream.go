@@ -60,8 +60,8 @@ func Relay(conWithClient, conWithTarget net.Conn, host string) {
 	}()
 	buf := pool.Get().([]byte)
 	defer pool.Put(buf)
-	n, err := io.CopyBuffer(writerOnly{conWithClient}, conWithTarget, buf)
-	recvBytes.Add(float64(n))
+	_, err := io.CopyBuffer(writerOnly{conWithClient}, conWithTarget, buf)
+	//recvBytes.Add(float64(n))
 	if err == io.ErrShortWrite {
 		log.Println("copy short for", host)
 	}
