@@ -4,3 +4,4 @@ socks5.yaml
 target/
 gen.yaml
 gfwlist.txt
+.DS_store

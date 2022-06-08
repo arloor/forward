@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"io"
 	"log"
 	"net"
@@ -16,6 +18,11 @@ import (
 var pool = &sync.Pool{New: func() interface{} {
 	return make([]byte, 32*1024)
 }}
+
+var recvBytes = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "recv_bytes",
+	Help: "The total number of processed bytes",
+})
 
 // 屏蔽掉TCPCon的ReadFrom接口，因为并不能使用SendFile来减少copy，反而不能使用io.CopyBuf的buf缓存了
 type writerOnly struct {
@@ -44,6 +51,7 @@ func Relay(conWithClient, conWithTarget net.Conn, host string) {
 		buf := pool.Get().([]byte)
 		defer pool.Put(buf)
 		_, err := io.CopyBuffer(writerOnly{conWithTarget}, conWithClient, buf)
+		//recvBytes.Add(float64(n))
 		if err == io.ErrShortWrite {
 			log.Println("copy short for", host)
 		}
@@ -52,7 +60,8 @@ func Relay(conWithClient, conWithTarget net.Conn, host string) {
 	}()
 	buf := pool.Get().([]byte)
 	defer pool.Put(buf)
-	_, err := io.CopyBuffer(writerOnly{conWithClient}, conWithTarget, buf)
+	n, err := io.CopyBuffer(writerOnly{conWithClient}, conWithTarget, buf)
+	recvBytes.Add(float64(n))
 	if err == io.ErrShortWrite {
 		log.Println("copy short for", host)
 	}
