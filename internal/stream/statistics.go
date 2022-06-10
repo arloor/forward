@@ -3,7 +3,7 @@ package stream
 import (
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
-	"github.com/go-echarts/go-echarts/v2/types"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -47,21 +47,78 @@ func generateLineItems(data []int64) []opts.LineData {
 func LineGraph(w http.ResponseWriter, _ *http.Request) {
 	// create a new line instance
 	line := charts.NewLine()
-	// set some global options like Title/Legend/ToolTip or anything else
-	line.SetGlobalOptions(
-		charts.WithInitializationOpts(opts.Initialization{PageTitle: "forward监控", Theme: types.ThemeRoma, Width: "100%", Height: "100vh"}))
 
 	// Put data into instance
+	recvRate := recvStatics.GetAll()
+	uploadRate := uploadStatics.GetAll()
+	var max int64 = 0
+	for _, num := range recvRate {
+		if num > max {
+			max = num
+		}
+	}
+	for _, num := range uploadRate {
+		if num > max {
+			max = num
+		}
+	}
+	var interval int64 = 1024 * 1024
+	if max/(interval) > 10 {
+		interval = int64(math.Ceil(float64(max/interval/10))) * interval
+	}
+	splitNum := int(math.Ceil(float64(max) / float64(interval)))
+	max = int64(splitNum) * interval
+	// set some global options like Title/Legend/ToolTip or anything else
+	line.SetGlobalOptions(charts.WithYAxisOpts(opts.YAxis{
+		Max:         max,
+		Type:        "value",
+		Scale:       false,
+		SplitNumber: splitNum,
+		AxisLabel: &opts.AxisLabel{
+			Interval: strconv.FormatInt(interval, 10),
+			Formatter: opts.FuncOpts(`function(value, index) {
+                                if (value == 0) {
+                                    value = '0B';
+                                } else {
+                                    var k = 1024;
+                                    var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                                    var c = Math.floor(Math.log(value) / Math.log(k));
+                                    value = (value / Math.pow(k, c)) + ' ' + sizes[c];
+                                }
+                                return value;
+                            }`),
+		},
+	}), charts.WithTooltipOpts(opts.Tooltip{
+		Show:      true,
+		Trigger:   "axis",
+		TriggerOn: "",
+		Formatter: opts.FuncOpts(`function(value) {
+							console.log(value);
+                            if (value[0].value == 0) {
+                                value[0].value = '0B';
+                            } else {
+                                var k = 1024;
+                                var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                                var c = Math.floor(Math.log(value[0].value) / Math.log(k));
+                                value[0].value = (value[0].value / Math.pow(k, c)).toPrecision(4) + ' ' + sizes[c];
+                            }
+                            if (value[1].value == 0) {
+                                value[1].value = '0B';
+                            } else {
+                                var k = 1024;
+                                var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                                var c = Math.floor(Math.log(value[1].value) / Math.log(k));
+                                value[1].value = (value[1].value / Math.pow(k, c)).toPrecision(4) + ' ' + sizes[c];
+                            }
+                            return value[0].seriesName + ' ' + value[0].value+ '<br/>' + value[1].seriesName + ' ' + value[1].value;
+                        }`),
+		AxisPointer: nil,
+	}),
+		charts.WithInitializationOpts(opts.Initialization{PageTitle: "forward监控", Width: "100%", Height: "100vh"}))
+
 	line.SetXAxis(xAxis).
-		AddSeries("下行", generateLineItems(recvStatics.GetAll())).
-		AddSeries("上行", generateLineItems(uploadStatics.GetAll())).
-		SetGlobalOptions(charts.WithTooltipOpts(opts.Tooltip{
-			Show:        true,
-			Trigger:     "axis",
-			TriggerOn:   "",
-			Formatter:   "{a0} {c0} B/s<br/>{a1} {c1} B/s",
-			AxisPointer: nil,
-		})).
+		AddSeries("下行", generateLineItems(recvRate)).
+		AddSeries("上行", generateLineItems(uploadRate)).
 		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
 
 	line.Render(w)
