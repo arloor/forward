@@ -20,7 +20,7 @@ func main() {
 	go func() {
 		http.HandleFunc("/metrics", stream.PromMetrics)
 		http.HandleFunc("/final", socks5.ModifyFinalUpstream)
-		http.HandleFunc("/", stream.LineGraph)
+		http.HandleFunc("/", stream.ServeLine)
 		http.ListenAndServe(":9999", nil)
 	}()
 	go socks5.Serve()
