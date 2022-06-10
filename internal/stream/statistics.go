@@ -137,7 +137,7 @@ func init() {
                     },
                     series: [        {
                         itemStyle:{
-							color: '#ff8000',
+							color: '#2eb82e',
                         },
                         "data": {{.seriesUp}},
                         "markLine": {
@@ -190,7 +190,7 @@ func init() {
                     },
                     {
                         itemStyle:{
-                            color: '#2eb82e',
+                            color: '#ef0000',
                         },
                         "data": {{.seriesDown}},
                         "markLine": {
@@ -370,7 +370,7 @@ func ServeLine(w http.ResponseWriter, _ *http.Request) {
 	param["seriesUp"] = string(seriesUp)
 	param["seriesDown"] = string(seriesDown)
 	param["interval"] = strconv.FormatInt(interval, 10)
-	param["title"] = "实时网速"
+	param["title"] = "本地代理"
 	param["echarts_url"] = "https://www.arloor.com/echarts.min.js"
 	tmpl.Execute(w, param)
 }
