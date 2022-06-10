@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const size = 120
+const size = 300
 
 var (
 	xAxis                              = make([]string, size, size)
@@ -137,7 +137,7 @@ func init() {
                     },
                     series: [        {
                         itemStyle:{
-                            color: '#ef0000',
+							color: '#ff8000',
                         },
                         "data": {{.seriesUp}},
                         "markLine": {
@@ -190,7 +190,7 @@ func init() {
                     },
                     {
                         itemStyle:{
-                            color: '#5bf',
+                            color: '#2eb82e',
                         },
                         "data": {{.seriesDown}},
                         "markLine": {
