@@ -57,12 +57,12 @@ func handler(conn net.Conn) {
 	defer conn.Close()
 	err := Handshake(reader, conn)
 	if err != nil {
-		log.Println("err ", err)
+		log.Println("socks5 handshake err: ", err)
 		return
 	}
 	host, port, getTargetErr := ParseRequest(reader, conn)
 	if getTargetErr != nil {
-		log.Println(getTargetErr)
+		log.Println("parse socks5 target err:", getTargetErr)
 		return
 	}
 	addr := host + ":" + strconv.Itoa(port)
