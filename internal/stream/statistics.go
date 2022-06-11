@@ -42,7 +42,7 @@ func init() {
                     <head>
                         <meta charset="UTF-8">
                         <title>{{.title}}</title>
-                        <meta http-equiv="refresh" content="1">
+                        <meta http-equiv="refresh" content="{{.refresh}}">
                         <script src="{{.echarts_url}}"></script>
                     </head>
                     <body style="margin: 0;height:100%;">
@@ -341,7 +341,15 @@ func LineGraph(w http.ResponseWriter, _ *http.Request) {
 	line.Render(w)
 }
 
-func ServeLine(w http.ResponseWriter, _ *http.Request) {
+func ServeLine(w http.ResponseWriter, r *http.Request) {
+	refreshStr := r.URL.Query().Get("r")
+	if refreshStr == "" {
+		refreshStr = "3"
+	}
+	refresh, err := strconv.Atoi(refreshStr)
+	if err != nil {
+		refresh = 3
+	}
 	legends, _ := json.Marshal([]string{"上行网速", "下行网速"})
 	scales, _ := json.Marshal(xAxis)
 	uploadRate := uploadStatics.GetAll()
@@ -371,6 +379,7 @@ func ServeLine(w http.ResponseWriter, _ *http.Request) {
 	param["seriesDown"] = string(seriesDown)
 	param["interval"] = strconv.FormatInt(interval, 10)
 	param["title"] = "本地代理"
+	param["refresh"] = refresh
 	param["echarts_url"] = "https://www.arloor.com/echarts.min.js"
 	tmpl.Execute(w, param)
 }
