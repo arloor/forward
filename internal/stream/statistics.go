@@ -185,7 +185,7 @@ func init() {
                             }
                         },
                         "name": "上行网速",
-                        "smooth": false,
+                        "smooth": true,
                         "type": "line"
                     },
                     {
@@ -238,7 +238,7 @@ func init() {
                              }
                          },
                         "name": "下行网速",
-                        "smooth": false,
+                        "smooth": true,
                         "type": "line"
                     }],
                     animation: false,
