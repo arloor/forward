@@ -40,7 +40,7 @@ func init() {
                     <head>
                         <meta charset="UTF-8">
                         <title>{{.title}}</title>
-                        <meta http-equiv="refresh" content="{{.refresh}}">
+                        <meta httpproxy-equiv="refresh" content="{{.refresh}}">
                         <script src="{{.echarts_url}}"></script>
                     </head>
                     <body style="margin: 0;height:100%;">

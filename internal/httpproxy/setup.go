@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/caddyserver/forwardproxy/httpclient"
+	"forward/internal/httpproxy/httpclient"
 	"golang.org/x/net/proxy"
 )
 
@@ -92,7 +92,7 @@ func Setup(host, port, upstream string) (*ForwardProxy, error) {
 			return d, nil
 		}
 		proxy.RegisterDialerType("https", registerHTTPDialer)
-		proxy.RegisterDialerType("http", registerHTTPDialer)
+		proxy.RegisterDialerType("httpproxy", registerHTTPDialer)
 
 		upstreamDialer, err := proxy.FromURL(fp.upstream, dialer)
 		if err != nil {

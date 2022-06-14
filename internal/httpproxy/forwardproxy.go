@@ -23,7 +23,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/caddyserver/forwardproxy/httpclient"
+	"forward/internal/httpproxy/httpclient"
 	"io"
 	"io/ioutil"
 	"log"
@@ -292,7 +292,9 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 		w.Header().Set("Server", "openresty")
 		return 0, nil
 	}
-	//log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL.Host)
+	if r.Method == "GET" || r.Method == "POST" {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	}
 	var authErr error
 	if fp.authRequired {
 		authErr = fp.checkCredentials(r)
@@ -370,14 +372,14 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 			wFlusher.Flush()
 			return 0, dualStream(targetConn, r.Body, w)
 		default:
-			panic("There was a check for http version, yet it's incorrect")
+			panic("There was a check for httpproxy version, yet it's incorrect")
 		}
 	} else {
 		// Scheme has to be appended to avoid `unsupported protocol scheme ""` error.
-		// `http://` is used, since this initial request itself is always HTTP, regardless of what client and server
+		// `httpproxy://` is used, since this initial request itself is always HTTP, regardless of what client and server
 		// may speak afterwards.
 		if r.URL.Scheme == "" {
-			r.URL.Scheme = "http"
+			r.URL.Scheme = "httpproxy"
 		}
 		if r.URL.Host == "" {
 			r.URL.Host = r.Host
@@ -421,7 +423,7 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 			// Upstream requests don't interact well with Transport: connections could always be
 			// reused, but Transport thinks they go to different Hosts, so it spawns tons of
 			// useless connections.
-			// Just use dialContext, which will multiplex via single connection, if http/2
+			// Just use dialContext, which will multiplex via single connection, if httpproxy/2
 			if creds := fp.upstream.User.String(); creds != "" {
 				// set upstream credentials for the request, if needed
 				r.Header.Set("Proxy-Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(creds)))
@@ -435,11 +437,11 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 			}
 			err = r.Write(upsConn)
 			if err != nil {
-				return http.StatusBadGateway, errors.New("failed to write http request: " + err.Error())
+				return http.StatusBadGateway, errors.New("failed to write httpproxy request: " + err.Error())
 			}
 			response, err = http.ReadResponse(bufio.NewReader(upsConn), r)
 			if err != nil {
-				return http.StatusBadGateway, errors.New("failed to read http response: " + err.Error())
+				return http.StatusBadGateway, errors.New("failed to read httpproxy response: " + err.Error())
 			}
 		}
 		r.Body.Close()
@@ -450,7 +452,7 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 			if p, ok := err.(*ProxyError); ok {
 				return p.SplitCodeError()
 			}
-			return http.StatusBadGateway, errors.New("failed to read http response: " + err.Error())
+			return http.StatusBadGateway, errors.New("failed to read httpproxy response: " + err.Error())
 		}
 
 		return 0, forwardResponse(w, response)
@@ -498,7 +500,7 @@ func removeHopByHop(header http.Header) {
 }
 
 // flushingIoCopy is analogous to buffering io.Copy(), but also attempts to flush on each iteration.
-// If dst does not implement http.Flusher(e.g. net.TCPConn), it will do a simple io.CopyBuffer().
+// If dst does not implement httpproxy.Flusher(e.g. net.TCPConn), it will do a simple io.CopyBuffer().
 // Reasoning: http2ResponseWriter will not flush on its own, so we have to do it manually.
 func flushingIoCopy(dst io.Writer, src io.Reader, buf []byte) (written int64, err error) {
 	flusher, ok := dst.(http.Flusher)

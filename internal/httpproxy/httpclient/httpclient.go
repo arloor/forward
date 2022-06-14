@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// httpclient is used by the upstreaming forwardproxy to establish connections to http(s) upstreams.
+// httpclient is used by the upstreaming forwardproxy to establish connections to httpproxy(s) upstreams.
 // it implements x/net/proxy.Dialer interface
 package httpclient
 
@@ -67,7 +67,7 @@ func NewHTTPConnectDialer(proxyUrlStr string) (*HTTPConnectDialer, error) {
 	}
 
 	switch proxyUrl.Scheme {
-	case "http":
+	case "httpproxy":
 		if proxyUrl.Port() == "" {
 			proxyUrl.Host = net.JoinHostPort(proxyUrl.Host, "80")
 		}
@@ -105,7 +105,7 @@ func (c *HTTPConnectDialer) Dial(network, address string) (net.Conn, error) {
 // Users of context.WithValue should define their own types for keys
 type ContextKeyHeader struct{}
 
-// ctx.Value will be inspected for optional ContextKeyHeader{} key, with `http.Header` value,
+// ctx.Value will be inspected for optional ContextKeyHeader{} key, with `httpproxy.Header` value,
 // which will be added to outgoing request headers, overriding any colliding c.DefaultHeader
 func (c *HTTPConnectDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	req := (&http.Request{
@@ -192,7 +192,7 @@ func (c *HTTPConnectDialer) DialContext(ctx context.Context, network, address st
 	var rawConn net.Conn
 	negotiatedProtocol := ""
 	switch c.ProxyUrl.Scheme {
-	case "http":
+	case "httpproxy":
 		rawConn, err = c.Dialer.DialContext(ctx, network, c.ProxyUrl.Host)
 		if err != nil {
 			return nil, err
@@ -205,7 +205,7 @@ func (c *HTTPConnectDialer) DialContext(ctx context.Context, network, address st
 			}
 		} else {
 			tlsConf := tls.Config{
-				NextProtos: []string{"h2", "http/1.1"},
+				NextProtos: []string{"h2", "httpproxy/1.1"},
 				ServerName: c.ProxyUrl.Hostname(),
 			}
 			tlsConn, err := tls.Dial(network, c.ProxyUrl.Host, &tlsConf)
@@ -226,7 +226,7 @@ func (c *HTTPConnectDialer) DialContext(ctx context.Context, network, address st
 	switch negotiatedProtocol {
 	case "":
 		fallthrough
-	case "http/1.1":
+	case "httpproxy/1.1":
 		return connectHttp1(rawConn)
 	case "h2":
 		t := http2.Transport{}

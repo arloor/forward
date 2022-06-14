@@ -2,11 +2,11 @@ module forward
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
-	github.com/caddyserver/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f
+	github.com/kr/pretty v0.1.0 // indirect
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-replace github.com/caddyserver/forwardproxy v0.0.0-20211013034647-8c6ef2bd4a8f => github.com/arloor/forwardproxy v0.0.0-20220614075435-ccf74f60544c
 
 go 1.16
