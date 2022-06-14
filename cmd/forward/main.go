@@ -4,19 +4,43 @@ import (
 	"flag"
 	"forward/internal/socks5"
 	"forward/internal/stream"
-	httpproxy "github.com/caddyserver/caddy/caddy/caddymain"
-	_ "github.com/caddyserver/forwardproxy"
+	"github.com/caddyserver/forwardproxy"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+)
+
+var (
+	logFile  string
+	httpAddr string
+	upstream string
 )
 
 func init() {
-	log.SetFlags(log.Lshortfile | log.Flags())
+	flag.StringVar(&logFile, "log", "stdout", "日志文件")
+	flag.StringVar(&httpAddr, "http", "localhost:3128", "http代理监听地址")
+	flag.StringVar(&upstream, "upstream", "socks5://localhost:1080", "http代理上游url")
 }
 
 func main() {
 	flag.Parse()
+	if logFile == "stdout" {
+		log.SetOutput(os.Stdout)
+	} else {
+		rollingFile := &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    50,
+			MaxAge:     14,
+			MaxBackups: 10,
+			Compress:   false,
+		}
+		mw := io.MultiWriter(os.Stdout, rollingFile)
+		log.SetOutput(mw)
+	}
+	log.SetFlags(log.Lshortfile | log.Flags())
 	go func() {
 		http.HandleFunc("/metrics", stream.PromMetrics)
 		http.HandleFunc("/final", socks5.ModifyFinalUpstream)
@@ -24,6 +48,6 @@ func main() {
 		http.ListenAndServe(":9999", nil)
 	}()
 	go socks5.Serve()
-	httpproxy.EnableTelemetry = false
-	httpproxy.Run()
+	forwardProxy, _ := forwardproxy.Setup("localhost", "3128", upstream)
+	http.ListenAndServe(httpAddr, &forwardproxy.Handler{Fp: forwardProxy})
 }

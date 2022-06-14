@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/caddyserver/forwardproxy/httpclient"
 	"io"
 	"io/ioutil"
 	"log"
@@ -33,14 +34,9 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/caddyserver/caddy/caddyhttp/httpserver"
-	"github.com/caddyserver/forwardproxy/httpclient"
 )
 
 type ForwardProxy struct {
-	Next httpserver.Handler
-
 	authRequired    bool
 	authCredentials [][]byte // slice with base64-encoded credentials
 
@@ -310,12 +306,12 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 		if fp.shouldServePacFile(r) {
 			return fp.servePacFile(w)
 		}
-		return fp.Next.ServeHTTP(w, r)
+		return 0, nil
 	}
 	if authErr != nil {
 		if fp.probeResistEnabled {
 			// probe resistance is requested and requested URI does not match secret domain
-			httpserver.WriteSiteNotFound(w, r)
+			//httpserver.WriteSiteNotFound(w, r)
 			return 0, authErr // current Caddy behavior without forwardproxy
 		} else {
 			w.Header().Set("Proxy-Authenticate", "Basic realm=\"Caddy Secure Web Proxy\"")

@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -26,22 +25,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/caddyserver/caddy"
-	"github.com/caddyserver/caddy/caddyhttp/httpserver"
 	"github.com/caddyserver/forwardproxy/httpclient"
 	"golang.org/x/net/proxy"
 )
 
-func setup(c *caddy.Controller) error {
-	httpserver.GetConfig(c).FallbackSite = true
+func Setup(host, port, upstream string) (*ForwardProxy, error) {
 	fp := &ForwardProxy{
 		dialTimeout: time.Second * 20,
-		hostname:    httpserver.GetConfig(c).Host(), port: httpserver.GetConfig(c).Port(),
+		hostname:    host, port: port,
 		httpTransport: http.Transport{
 			Proxy:               http.ProxyFromEnvironment,
 			MaxIdleConns:        50,
@@ -49,223 +44,10 @@ func setup(c *caddy.Controller) error {
 			TLSHandshakeTimeout: 10 * time.Second,
 		},
 	}
-
-	c.Next() // skip the directive name
-
-	args := c.RemainingArgs()
-	if len(args) > 0 {
-		return c.ArgErr()
-	}
-
-	for c.NextBlock() {
-		subdirective := c.Val()
-		args := c.RemainingArgs()
-		switch subdirective {
-		case "basicauth":
-			if len(args) != 2 {
-				return c.ArgErr()
-			}
-			if len(args[0]) == 0 {
-				return c.Err("empty usernames are not allowed")
-			}
-			// TODO: Evaluate policy of allowing empty passwords.
-			if strings.Contains(args[0], ":") {
-				return c.Err("character ':' in usernames is not allowed")
-			}
-			if fp.authCredentials == nil {
-				fp.authCredentials = [][]byte{}
-			}
-			// base64-encode credentials
-			buf := make([]byte, base64.StdEncoding.EncodedLen(len(args[0])+1+len(args[1])))
-			base64.StdEncoding.Encode(buf, []byte(args[0]+":"+args[1]))
-			fp.authCredentials = append(fp.authCredentials, buf)
-			fp.authRequired = true
-		case "ports":
-			if len(args) == 0 {
-				return c.ArgErr()
-			}
-			if len(fp.whitelistedPorts) != 0 {
-				return c.Err("ports subdirective specified twice")
-			}
-			fp.whitelistedPorts = make([]int, len(args))
-			for i, p := range args {
-				intPort, err := strconv.Atoi(p)
-				if intPort <= 0 || intPort > 65535 || err != nil {
-					return c.Err("ports are expected to be space-separated" +
-						" and in 0-65535 range. Got: " + p)
-				}
-				fp.whitelistedPorts[i] = intPort
-			}
-		case "hide_ip":
-			if len(args) != 0 {
-				return c.ArgErr()
-			}
-			fp.hideIP = true
-		case "hide_via":
-			if len(args) != 0 {
-				return c.ArgErr()
-			}
-			fp.hideVia = true
-		case "probe_resistance":
-			if len(args) > 1 {
-				return c.ArgErr()
-			}
-			fp.probeResistEnabled = true
-			if len(args) == 1 {
-				lowercaseArg := strings.ToLower(args[0])
-				if lowercaseArg != args[0] {
-					log.Println("WARNING: secret domain appears to have uppercase letters in it, which are not visitable")
-				}
-				fp.probeResistDomain = args[0]
-			}
-		case "serve_pac":
-			if len(args) > 1 {
-				return c.ArgErr()
-			}
-			if len(fp.pacFilePath) != 0 {
-				return c.Err("serve_pac subdirective specified twice")
-			}
-			if len(args) == 1 {
-				fp.pacFilePath = args[0]
-				if !strings.HasPrefix(fp.pacFilePath, "/") {
-					fp.pacFilePath = "/" + fp.pacFilePath
-				}
-			} else {
-				fp.pacFilePath = "/proxy.pac"
-			}
-			log.Printf("Proxy Auto-Config will be served at %s%s\n", fp.hostname, fp.pacFilePath)
-		case "response_timeout":
-			if len(args) != 1 {
-				return c.ArgErr()
-			}
-			timeout, err := strconv.Atoi(args[0])
-			if err != nil {
-				return c.ArgErr()
-			}
-			if timeout < 0 {
-				return c.Err("response_timeout cannot be negative.")
-			}
-			fp.httpTransport.ResponseHeaderTimeout = time.Duration(timeout) * time.Second
-		case "dial_timeout":
-			if len(args) != 1 {
-				return c.ArgErr()
-			}
-			timeout, err := strconv.Atoi(args[0])
-			if err != nil {
-				return c.ArgErr()
-			}
-			if timeout < 0 {
-				return c.Err("dial_timeout cannot be negative.")
-			}
-			fp.dialTimeout = time.Second * time.Duration(timeout)
-		case "upstream":
-			if len(args) != 1 {
-				return c.ArgErr()
-			}
-			if fp.upstream != nil {
-				return c.Err("upstream directive specified more than once")
-			}
-			var err error
-			fp.upstream, err = url.Parse(args[0])
-			if err != nil {
-				return c.Err("failed to parse upstream address: " + err.Error())
-			}
-		case "acl":
-			if len(args) != 0 {
-				return c.Err("acl should be only subdirective on the line")
-			}
-			args := c.RemainingArgs()
-			if len(args) > 0 {
-				return c.ArgErr()
-			}
-			c.Next()
-			if c.Val() != "{" {
-				return c.Err("acl directive must be followed by opening curly braces \"{\"")
-			}
-			for {
-				if !c.Next() {
-					return c.Err("acl blockmust be ended by closing curly braces \"}\"")
-				}
-				aclDirective := c.Val()
-				args := c.RemainingArgs()
-				if aclDirective == "}" {
-					break
-				}
-				if len(args) == 0 {
-					return c.ArgErr()
-				}
-				var ruleSubjects []string
-				var err error
-				aclAllow := false
-				switch aclDirective {
-				case "allow":
-					ruleSubjects = args[:]
-					aclAllow = true
-				case "allowfile":
-					if len(args) != 1 {
-						return c.Err("allowfile accepts a single filename argument")
-					}
-					ruleSubjects, err = readLinesFromFile(args[0])
-					if err != nil {
-						return err
-					}
-					aclAllow = true
-				case "deny":
-					ruleSubjects = args[:]
-				case "denyfile":
-					if len(args) != 1 {
-						return c.Err("denyfile accepts a single filename argument")
-					}
-					ruleSubjects, err = readLinesFromFile(args[0])
-					if err != nil {
-						return err
-					}
-				default:
-					return c.Err("expected acl directive: allow/allowfile/deny/denyfile." +
-						"got: " + aclDirective)
-				}
-				for _, rs := range ruleSubjects {
-					ar, err := newAclRule(rs, aclAllow)
-					if err != nil {
-						return err
-					}
-					fp.aclRules = append(fp.aclRules, ar)
-				}
-			}
-		default:
-			return c.ArgErr()
-		}
-	}
-
-	if fp.upstream != nil && (fp.aclRules != nil || len(fp.whitelistedPorts) != 0) {
-		return c.Err("upstream subdirective is incompatible with acl/ports subdirectives")
-	}
-
-	for _, ipDeny := range []string{
-		"10.0.0.0/8",
-		"127.0.0.0/8",
-		"172.16.0.0/12",
-		"192.168.0.0/16",
-		"::1/128",
-		"fe80::/10",
-	} {
-		ar, err := newAclRule(ipDeny, false)
-		if err != nil {
-			panic(err)
-		}
-		fp.aclRules = append(fp.aclRules, ar)
-	}
-	fp.aclRules = append(fp.aclRules, &aclAllRule{allow: true})
-
-	if fp.probeResistEnabled {
-		if !fp.authRequired {
-			return c.Err("probing resistance requires authentication: " +
-				"add `basicauth username password` to forwardproxy")
-		}
-		if len(fp.probeResistDomain) > 0 {
-			log.Printf("Secret domain used to connect to proxy: %s\n", fp.probeResistDomain)
-		}
-	}
+	fp.authCredentials = [][]byte{}
+	fp.hideIP = true
+	fp.hideVia = true
+	fp.upstream, _ = url.Parse(upstream)
 
 	dialer := &net.Dialer{
 		Timeout:   fp.dialTimeout,
@@ -283,7 +65,7 @@ func setup(c *caddy.Controller) error {
 
 	if fp.upstream != nil {
 		if !isLocalhost(fp.upstream.Hostname()) && fp.upstream.Scheme != "https" {
-			return errors.New("insecure schemes are only allowed to localhost upstreams")
+			return nil, errors.New("insecure schemes are only allowed to localhost upstreams")
 		}
 
 		registerHTTPDialer := func(u *url.URL, _ proxy.Dialer) (proxy.Dialer, error) {
@@ -314,7 +96,7 @@ func setup(c *caddy.Controller) error {
 
 		upstreamDialer, err := proxy.FromURL(fp.upstream, dialer)
 		if err != nil {
-			return errors.New("failed to create proxy to upstream: " + err.Error())
+			return nil, errors.New("failed to create proxy to upstream: " + err.Error())
 		}
 
 		if ctxDialer, ok := upstreamDialer.(interface {
@@ -330,21 +112,9 @@ func setup(c *caddy.Controller) error {
 		}
 	}
 
-	httpserver.GetConfig(c).AddMiddleware(func(next httpserver.Handler) httpserver.Handler {
-		fp.Next = next
-		return fp
-	})
-
 	makeBuffer := func() interface{} { return make([]byte, 0, 32*1024) }
 	bufferPool = sync.Pool{New: makeBuffer}
-	return nil
-}
-
-func init() {
-	caddy.RegisterPlugin("forwardproxy", caddy.Plugin{
-		ServerType: "http",
-		Action:     setup,
-	})
+	return fp, nil
 }
 
 func isLocalhost(hostname string) bool {
@@ -406,4 +176,12 @@ func (e *ProxyError) SplitCodeError() (int, error) {
 		return 200, nil
 	}
 	return e.Code, errors.New(e.S)
+}
+
+type Handler struct {
+	Fp *ForwardProxy
+}
+
+func (ha *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ha.Fp.ServeHTTP(w, r)
 }
