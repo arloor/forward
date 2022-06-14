@@ -9,9 +9,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-
 	_ "net/http/pprof"
 	"os"
+	"runtime"
 )
 
 var (
@@ -37,6 +37,7 @@ func main() {
 	}()
 	go socks5.Serve()
 	forwardProxy, _ := forwardproxy.Setup("localhost", "3128", upstream)
+	log.Println("go version", runtime.Version())
 	http.ListenAndServe(httpAddr, &forwardproxy.Handler{Fp: forwardProxy})
 }
 

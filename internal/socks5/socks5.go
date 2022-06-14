@@ -41,11 +41,6 @@ func parseConf(socks5conf string) error {
 			config.Rules = append(config.Rules, *rule)
 		}
 	}
-	marshal, err := yaml.Marshal(config)
-	if err == nil {
-		log.Println("socks5 config:\n" + string(marshal))
-	}
-
 	for _, upstream := range config.Upstreams {
 		upstreamMap[upstream.Name] = &Upstream{Name: upstream.Name, Host: upstream.Host, Port: upstream.Port, BasicAuth: upstream.BasicAuth}
 	}
