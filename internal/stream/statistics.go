@@ -278,7 +278,7 @@ func ServeLine(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if max/(interval) > 10 {
-		interval = int64(math.Ceil(float64(max/interval/10))) * interval
+		interval = int64(math.Ceil(float64(max)/float64(interval)/10)) * interval
 	}
 
 	param := make(map[string]interface{})
