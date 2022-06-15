@@ -106,6 +106,7 @@ func dualStream(target net.Conn, clientReader io.ReadCloser, clientWriter io.Wri
 	stream := func(w io.Writer, r io.Reader) error {
 		// copy bytes from r to w
 		buf := bufferPool.Get().([]byte)
+		defer bufferPool.Put(buf)
 		buf = buf[0:cap(buf)]
 		_, _err := flushingIoCopy(w, r, buf)
 		if closeWriter, ok := w.(interface {
@@ -295,6 +296,7 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 	if r.Method == "GET" || r.Method == "POST" {
 		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	}
+	// 鉴权
 	var authErr error
 	if fp.authRequired {
 		authErr = fp.checkCredentials(r)
@@ -337,7 +339,7 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 		ctx = context.WithValue(ctx, httpclient.ContextKeyHeader{}, ctxHeader)
 	}
 
-	if r.Method == http.MethodConnect {
+	if r.Method == http.MethodConnect { //connect处理
 		if r.ProtoMajor == 2 {
 			if len(r.URL.Scheme) > 0 || len(r.URL.Path) > 0 {
 				return http.StatusBadRequest, errors.New("CONNECT request has :scheme or/and :path pseudo-header fields")
@@ -374,7 +376,7 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 		default:
 			panic("There was a check for httpproxy version, yet it's incorrect")
 		}
-	} else {
+	} else { // get post等
 		// Scheme has to be appended to avoid `unsupported protocol scheme ""` error.
 		// `httpproxy://` is used, since this initial request itself is always HTTP, regardless of what client and server
 		// may speak afterwards.
@@ -472,6 +474,7 @@ func forwardResponse(w http.ResponseWriter, response *http.Response) error {
 	removeHopByHop(w.Header())
 	w.WriteHeader(response.StatusCode)
 	buf := bufferPool.Get().([]byte)
+	defer bufferPool.Put(buf)
 	buf = buf[0:cap(buf)]
 	_, err := io.CopyBuffer(w, response.Body, buf)
 	return err
