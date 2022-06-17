@@ -21,6 +21,9 @@ func Serve() {
 	}
 }
 
+const DEFAULT = "default"
+const FINAL = "final"
+
 func parseConf(socks5conf string) error {
 	log.Println("read socks5 config from", socks5conf)
 	file, err := os.Open(socks5conf)
@@ -35,14 +38,20 @@ func parseConf(socks5conf string) error {
 	if err != nil {
 		return err
 	}
-	if config.GfwText != "" && config.GfwUpstreamName != "" {
-		rule := GenRouteRuleFromGfwText(config.GfwText, config.GfwUpstreamName)
+	defaultUpstream := config.UpstreamAlias[DEFAULT]
+	log.Printf("default upstream is [%s]\n", defaultUpstream)
+	if config.GfwText != "" && defaultUpstream != "" {
+		rule := GenRouteRuleFromGfwText(config.GfwText, DEFAULT)
 		if rule != nil {
 			config.Rules = append(config.Rules, *rule)
 		}
 	}
 	for _, upstream := range config.Upstreams {
 		upstreamMap[upstream.Name] = &Upstream{Name: upstream.Name, Host: upstream.Host, Port: upstream.Port, BasicAuth: upstream.BasicAuth}
+	}
+	// 读取alias
+	for alias := range config.UpstreamAlias {
+		upstreamMap[alias] = upstreamMap[config.UpstreamAlias[alias]]
 	}
 	return nil
 }
@@ -90,7 +99,7 @@ func determineUpstream(addr string) (upstream *Upstream) {
 			return upstreamMap[rule.UpstreamName]
 		}
 	}
-	return upstreamMap[config.FinalUpstreamName]
+	return upstreamMap[FINAL]
 }
 
 func listen(addr string) {

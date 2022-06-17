@@ -31,7 +31,7 @@ func main() {
 	setupLog()
 	go func() {
 		http.HandleFunc("/metrics", stream.PromMetrics)
-		http.HandleFunc("/final", socks5.ModifyFinalUpstream)
+		http.HandleFunc("/final", socks5.ModifyAlias)
 		http.HandleFunc("/", stream.ServeLine)
 		http.ListenAndServe(":9999", nil)
 	}()

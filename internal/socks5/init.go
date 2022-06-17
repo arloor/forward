@@ -3,7 +3,6 @@ package socks5
 import (
 	"flag"
 	"gopkg.in/yaml.v2"
-	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -48,12 +47,11 @@ func (receiver *RouterRule) determine(domain string, ip net.IP) bool {
 }
 
 type Config struct {
-	FinalUpstreamName string       `yaml:"final-upstream-name"`
-	Upstreams         []Upstream   `yaml:"upstreams"`
-	GfwText           string       `yaml:"gfw-text,omitempty"`
-	GfwUpstreamName   string       `yaml:"gfw-upstream-name,omitempty"`
-	LocalAddr         string       `yaml:"local-addr"`
-	Rules             []RouterRule `yaml:"rules"`
+	Upstreams     []Upstream        `yaml:"upstreams"`
+	UpstreamAlias map[string]string `yaml:"upstream-alias,omitempty"`
+	GfwText       string            `yaml:"gfw-text,omitempty"`
+	LocalAddr     string            `yaml:"local-addr"`
+	Rules         []RouterRule      `yaml:"rules"`
 }
 
 type Upstream struct {
@@ -72,10 +70,12 @@ func InfoUpstream(upstream *Upstream) string {
 }
 
 // 修改无匹配的代理规则
-func ModifyFinalUpstream(writer http.ResponseWriter, request *http.Request) {
-	policy := request.URL.Query().Get("policy")
-	log.Println("set final upstream as", policy)
-	config.FinalUpstreamName = policy
+func ModifyAlias(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	for alias := range query {
+		upstreamMap[alias] = upstreamMap[query.Get(alias)]
+		config.UpstreamAlias[alias] = query.Get(alias)
+	}
 	marshal, err := yaml.Marshal(config)
 	if err != nil {
 		writer.WriteHeader(500)
