@@ -1,51 +1,10 @@
-final-upstream-name: "default"
+upstream-alias:
+  default: proxyA
+  final: direct
 upstreams:
-  - name: default
-    host: proxy.host
+  - name: proxyA
+    host: xx.xx.xx.xx
     port: 443
-    basic-auth: cHVibxxxxxxxN3ZA==
+    basic-auth: cHVibGljOnBhc3N3ZA==
 gfw-text: E:\GoLandProjects\go-forward\gfwlist.txt
-gfw-upstream-name: default
 local-addr: localhost:1080
-rules:
-  - upstream-name: default
-    rule-type: DOMAIN-SUFFIX
-    value:
-      - speedtest.net
-      - mozilla.com
-      - mozilla.net
-      - mozilla.org
-      - firefox.com
-      - google.com.hk
-      - google.com.sg
-      - google.com.jp
-      - .vscode-cdn.net
-      - .github.com
-      - .github.dev
-      - .trafficmanager.net
-      - .gallerycdn.vsassets.io
-      - default.exp-tas.com
-      - github.vscode-unpkg.net
-      - .visualstudio.com
-      - raw.githubusercontent.com
-      - vortex.data.microsoft.com
-      - .azureedge.net
-      - .servicebus.windows.net
-      - .jetbrains.com
-      - microsoft.com
-      - githubpreview.dev
-  - upstream-name: default
-    rule-type: IP-CIDR
-    value:
-      - 91.105.192.0/23
-      - 91.108.4.0/22
-      - 91.108.8.0/21
-      - 91.108.16.0/21
-      - 91.108.56.0/22
-      - 95.161.64.0/20
-      - 149.154.160.0/20
-      - 185.76.151.0/24
-      - 2001:67c:4e8::/48
-      - 2001:b28:f23c::/47
-      - 2001:b28:f23f::/48
-      - 2a0a:f280:203::/48
