@@ -65,3 +65,9 @@ EOF
 . pass
 curl https://www.google.com
 ```
+
+### 其他feature
+
+- 网速监控: [http://localhost:9999/](http://localhost:9999/)
+- prometheus exporter: [http://localhost:9999/metrics](http://localhost:9999/metrics)
+- 修改upstreamAlias：[http://localhost:9999/final?final=direct](http://localhost:9999/final?final=direct)
