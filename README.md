@@ -2,30 +2,13 @@
 
 ## [HttpProxy](https://github.com/arloor/HttpProxy)的客户端
 
-在本地启动http和socks5代理，作为[HttpProxy](https://github.com/arloor/HttpProxy)的客户端。socks5代理由自己开发，http代理使用caddy的forwardproxy插件。
+在本地启动http和socks5代理，作为[HttpProxy](https://github.com/arloor/HttpProxy)的客户端。socks5代理由自己开发，http代理则借鉴了caddy的forwardproxy插件。
 
 ![](/forward部署图.svg)
 
 ### 从Release页面下载二进制文件
 
 - 提供了Windows64位和Linux64位可执行文件
-
-### 从源码编译
-
-> 需要使用go1.16，go 1.18不行
-
-```shell
-wget https://go.dev/dl/go1.16.15.linux-amd64.tar.gz -O go1.16.15.linux-amd64.tar.gz
-rm -rf /usr/local/go16
-mkdir /usr/local/go16
-tar -zxvf go1.16.15.linux-amd64.tar.gz -C /usr/local/go16
-ln -fs /usr/local/go16/go/bin/go /usr/local/bin/go16
-go16 version
-rm -rf forward
-git clone https://github.com/arloor/forward
-cd forward
-go16 install forward/cmd/forward
-```
 
 ### 配置文件
 
@@ -39,22 +22,22 @@ bind 127.0.0.1
 forwardproxy {
     hide_ip
     hide_via
-    # 上游地址，请修改为自己的
-    upstream         https://user:passwd@proxy.site:443
+    upstream         socks5://localhost:1080 # 转发给本地的socks5代理
 }
 EOF
 
 # socks5代理
 cat > /etc/socks5.yaml <<EOF
-local-addr: localhost:1080 # 监听地址
+upstream-alias:
+  default: proxyA # 用于gfwlist
+  final: direct   # 其余网站直连
 upstreams:
-  - name: default          # 上游名称
-    host: proxy.site       # 上游地址
-    port: 443              # 上游端口
-    basic-auth: YXJsb2xxxxxxxxxxxxxvb3I= # "user:passwd" base64编码后的结果
-gfw-text: E:\GoLandProjects\go-forward\gfwlist.txt # gfwlist中的域名走下面的upstream
-gfw-upstream-name: default
-final-upstream-name: "default" # 未命中rules时使用的upstream，留空则直连
+  - name: proxyA
+    host: xx.xx.xx.xx
+    port: 443
+    basic-auth: cHVxxxxxx3ZA== # user:passwd base64后的结果
+gfw-text: E:\GoLandProjects\go-forward\gfwlist.txt
+local-addr: localhost:1080
 EOF
 ```
 
@@ -63,7 +46,7 @@ EOF
 ### 运行指南
 
 ```shell
-/root/go/bin/forward -conf /etc/caddyfile -socks5conf /etc/socks5.yaml -log /var/log/forward.log
+/root/go/bin/forward -socks5conf /etc/socks5.yaml -log /var/log/forward.log
 ```
 
 ### 测试
