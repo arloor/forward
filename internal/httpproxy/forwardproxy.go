@@ -183,7 +183,7 @@ func (fp *ForwardProxy) checkCredentials(r *http.Request) error {
 }
 
 // borrowed from `proxy` plugin
-func stripPort(address string) string {
+func StripPort(address string) string {
 	// Keep in mind that the address might be a IPv6 address
 	// and thus contain a colon, but not have a port.
 	portIdx := strings.LastIndex(address, ":")
@@ -301,10 +301,10 @@ func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, 
 	if fp.authRequired {
 		authErr = fp.checkCredentials(r)
 	}
-	if fp.probeResistEnabled && len(fp.probeResistDomain) > 0 && stripPort(r.Host) == fp.probeResistDomain {
+	if fp.probeResistEnabled && len(fp.probeResistDomain) > 0 && StripPort(r.Host) == fp.probeResistDomain {
 		return serveHiddenPage(w, authErr)
 	}
-	if stripPort(r.Host) == fp.hostname && (r.Method != http.MethodConnect || authErr != nil) {
+	if StripPort(r.Host) == fp.hostname && (r.Method != http.MethodConnect || authErr != nil) {
 		// Always pass non-CONNECT requests to hostname
 		// Pass CONNECT requests only if probe resistance is enabled and not authenticated
 		if fp.shouldServePacFile(r) {
