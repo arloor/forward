@@ -61,9 +61,13 @@ func parseConf(socks5conf string) error {
 type HttpRequest struct {
 	requestLine []byte
 	method      string
+	rawUrl      string
+	urlParsed   *url2.URL
+	version     string
 	host        string
 	port        int
 	headers     [][]byte
+	headerMap   map[string]string
 }
 
 var crlf = []byte("\r\n")
@@ -88,11 +92,13 @@ func handler(conn net.Conn) {
 			request := &HttpRequest{
 				requestLine: line,
 				method:      split[0],
+				rawUrl:      split[1],
+				version:     split[2],
 				headers:     make([][]byte, 0, 8),
+				headerMap:   make(map[string]string),
 			}
-			url := split[1]
 			if "CONNECT" == request.method {
-				hostPort := strings.Split(url, ":")
+				hostPort := strings.Split(request.rawUrl, ":")
 				request.host = hostPort[0]
 				if len(hostPort) == 2 {
 					request.port, _ = strconv.Atoi(hostPort[1])
@@ -100,17 +106,17 @@ func handler(conn net.Conn) {
 					request.port = 443
 				}
 			} else {
-				urlParsed, err := url2.Parse(url)
+				request.urlParsed, err = url2.Parse(request.rawUrl)
 				if err != nil {
 					return
 				}
-				if urlParsed.Port() == "" {
+				if request.urlParsed.Port() == "" {
 					request.port = 80
 				} else {
-					port, _ := strconv.Atoi(urlParsed.Port())
+					port, _ := strconv.Atoi(request.urlParsed.Port())
 					request.port = port
 				}
-				request.host = urlParsed.Host
+				request.host = request.urlParsed.Host
 			}
 			for {
 				line, _, err := reader.ReadLine()
@@ -120,13 +126,25 @@ func handler(conn net.Conn) {
 				if len(line) == 0 {
 					break
 				}
+				headerKeyValue := strings.Split(string(line), ": ")
+				if len(headerKeyValue) == 2 {
+					request.headerMap[headerKeyValue[0]] = headerKeyValue[1]
+				}
 				request.headers = append(request.headers, line)
-				//if "CONNECT" != request.method {
-				//	if strings.HasPrefix(string(line), "Host: ") || strings.HasPrefix(string(line), "host: ") {
-				//		request.host = forwardproxy.StripPort(strings.Split(string(line), " ")[1])
-				//		request.port = 80
-				//	}
-				//}
+				if "CONNECT" != request.method {
+					if headerKeyValue[0] == "Host" {
+						hostAndPort := strings.Split(headerKeyValue[1], ":")
+						request.host = hostAndPort[0]
+						if len(hostAndPort) == 2 {
+							request.port, err = strconv.Atoi(hostAndPort[1])
+							if err != nil {
+								request.port = 80
+							}
+						} else {
+							request.port = 80
+						}
+					}
+				}
 			}
 			upstream := determineUpstream(request.host)
 			addr := request.host + ":" + strconv.Itoa(request.port)
@@ -138,11 +156,35 @@ func handler(conn net.Conn) {
 			if "CONNECT" == request.method {
 				stream.WriteAll(conn, []byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
 				stream.Relay(conn, upstreamConn, addr)
-			} else {
+			} else if upstream != nil {
 				stream.WriteAll(upstreamConn, request.requestLine)
 				stream.WriteAll(upstreamConn, crlf)
 				for _, header := range request.headers {
 					stream.WriteAll(upstreamConn, header)
+					stream.WriteAll(upstreamConn, crlf)
+				}
+				stream.WriteAll(upstreamConn, crlf)
+				stream.Relay(conn, upstreamConn, addr)
+			} else {
+				stream.WriteAll(upstreamConn, []byte(request.method))
+				stream.WriteAll(upstreamConn, []byte(" "))
+				if request.urlParsed.RawQuery != "" {
+					stream.WriteAll(upstreamConn, []byte(request.urlParsed.Path+"?"+request.urlParsed.RawQuery))
+				} else {
+					stream.WriteAll(upstreamConn, []byte(request.urlParsed.Path))
+				}
+				stream.WriteAll(upstreamConn, []byte(" "))
+				stream.WriteAll(upstreamConn, []byte(request.version))
+				stream.WriteAll(upstreamConn, crlf)
+				delete(request.headerMap, "Proxy-Authorization")
+				proxyConnection := request.headerMap["Proxy-Connection"]
+				if proxyConnection != "" {
+					request.headerMap["Connection"] = proxyConnection
+				}
+				for key, value := range request.headerMap {
+					stream.WriteAll(upstreamConn, []byte(key))
+					stream.WriteAll(upstreamConn, []byte(": "))
+					stream.WriteAll(upstreamConn, []byte(value))
 					stream.WriteAll(upstreamConn, crlf)
 				}
 				stream.WriteAll(upstreamConn, crlf)
