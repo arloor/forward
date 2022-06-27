@@ -287,6 +287,13 @@ func (fp *ForwardProxy) dialContextCheckACL(ctx context.Context, network, hostPo
 }
 
 func (fp *ForwardProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) {
+
+	go func() {
+		select {
+		case <-r.Context().Done():
+			log.Println("done ", r.Host)
+		}
+	}()
 	if r.Method == "PUT" && r.URL.Host == "s3plus.sankuai.com" {
 		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL.Host)
 		w.WriteHeader(http.StatusBadGateway)
